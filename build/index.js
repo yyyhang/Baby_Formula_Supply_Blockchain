@@ -40,12 +40,158 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var web3_1 = __importDefault(require("web3"));
+var fs = require("fs");
+var solc = require("solc");
+var axios = require("axios").default;
 (function () { return __awaiter(void 0, void 0, void 0, function () {
-    var web3Provider, web3;
-    return __generator(this, function (_a) {
-        web3Provider = new web3_1.default.providers.WebsocketProvider("ws://localhost:7545");
-        web3 = new web3_1.default(web3Provider);
-        console.log(web3);
-        return [2 /*return*/];
+    function findImports(importPath) {
+        try {
+            return {
+                contents: fs.readFileSync("smart_contracts/" + importPath, "utf8")
+            };
+        }
+        catch (e) {
+            return {
+                error: e.message
+            };
+        }
+    }
+    function compileSols(solNames) {
+        ;
+        var sources = {};
+        solNames.forEach(function (value, index, array) {
+            var sol_file = fs.readFileSync("smart_contracts/" + value + ".sol", "utf8");
+            sources[value] = {
+                content: sol_file
+            };
+        });
+        var input = {
+            language: "Solidity",
+            sources: sources,
+            settings: {
+                outputSelection: {
+                    "*": {
+                        "*": ["*"]
+                    }
+                }
+            }
+        };
+        var compiler_output = solc.compile(JSON.stringify(input), {
+            import: findImports
+        });
+        var output = JSON.parse(compiler_output);
+        return output;
+    }
+    var web3Provider, web3, account, compiled, contract_instance, gasPrice, contract, _a, _b, _c, _d, _e;
+    var _f;
+    return __generator(this, function (_g) {
+        switch (_g.label) {
+            case 0:
+                web3Provider = new web3_1.default.providers.WebsocketProvider("ws://localhost:7545");
+                web3 = new web3_1.default(web3Provider);
+                account = web3.eth.accounts.wallet.add("0x" + "0a3f3963544a511c6736ad80864a486647bf86d18b31e1cf3fbdb4e6f26db6e3");
+                compiled = compileSols(["example"]);
+                contract = new web3.eth.Contract(compiled.contracts["example"]["CoatIndicator"].abi, undefined, {
+                    data: "0x" + compiled.contracts["example"]["CoatIndicator"].evm.bytecode.object
+                });
+                return [4 /*yield*/, web3.eth.getGasPrice().then(function (averageGasPrice) {
+                        gasPrice = averageGasPrice;
+                    }).catch(console.error)];
+            case 1:
+                _g.sent();
+                _b = (_a = contract.deploy({
+                    data: contract.options.data,
+                    arguments: [account.address]
+                })).send;
+                _f = {
+                    from: account.address,
+                    gasPrice: gasPrice
+                };
+                _d = (_c = Math).ceil;
+                _e = 1.2;
+                return [4 /*yield*/, contract.deploy({
+                        data: contract.options.data,
+                        arguments: [account.address]
+                    }).estimateGas({
+                        from: account.address
+                    })];
+            case 2: 
+            // assume account balance is sufficient
+            return [4 /*yield*/, _b.apply(_a, [(_f.gas = _d.apply(_c, [_e * (_g.sent())]),
+                        _f)]).then(function (instance) {
+                    contract_instance = instance;
+                }).catch(console.error)];
+            case 3:
+                // assume account balance is sufficient
+                _g.sent();
+                console.log(contract_instance.options.address);
+                // listen
+                contract_instance.events["temperatureRequest(string)"]()
+                    .on("connected", function (subscriptionId) {
+                    console.log("listening on event temperatureRequest");
+                })
+                    .on("data", function (event) {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var city, temperature, _a, _b, _c, _d, _e, e_1;
+                        var _f;
+                        return __generator(this, function (_g) {
+                            switch (_g.label) {
+                                case 0:
+                                    city = event.returnValues.city;
+                                    console.log('here');
+                                    return [4 /*yield*/, axios.get("https://goweather.herokuapp.com/weather/" + city)
+                                            .then(function (response) {
+                                            var _a, _b;
+                                            return __awaiter(this, void 0, void 0, function () {
+                                                return __generator(this, function (_c) {
+                                                    return [2 /*return*/, (_b = (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.temperature) === null || _b === void 0 ? void 0 : _b.replace(/[^0-9-\.]/g, "")];
+                                                });
+                                            });
+                                        })
+                                            .catch(function (error) {
+                                            console.log(error);
+                                        })];
+                                case 1:
+                                    temperature = _g.sent();
+                                    if (!parseInt(temperature)) {
+                                        console.log("invalid temperature");
+                                        return [2 /*return*/];
+                                    }
+                                    _g.label = 2;
+                                case 2:
+                                    _g.trys.push([2, 4, , 5]);
+                                    _b = (_a = contract_instance.methods["responsePhase(int256)"](temperature)).send;
+                                    _f = {
+                                        from: account.address,
+                                        gasPrice: gasPrice
+                                    };
+                                    _d = (_c = Math).ceil;
+                                    _e = 1.2;
+                                    return [4 /*yield*/, contract_instance.methods["responsePhase(int256)"](temperature).estimateGas({ from: account.address })];
+                                case 3:
+                                    _b.apply(_a, [(_f.gas = _d.apply(_c, [_e * (_g.sent())]),
+                                            _f)]).then(function (receipt) {
+                                        5;
+                                        return receipt;
+                                    }).catch(function (err) {
+                                        console.error(err);
+                                    });
+                                    return [3 /*break*/, 5];
+                                case 4:
+                                    e_1 = _g.sent();
+                                    console.log(e_1);
+                                    return [3 /*break*/, 5];
+                                case 5: return [2 /*return*/];
+                            }
+                        });
+                    });
+                })
+                    .on("error", function (error, receipt) {
+                    console.log(error);
+                    console.log(receipt);
+                    console.log("error listening on event temperatureRequest");
+                });
+                return [2 /*return*/];
+        }
     });
 }); })();
