@@ -40,158 +40,175 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var web3_1 = __importDefault(require("web3"));
-var fs = require("fs");
-var solc = require("solc");
-var axios = require("axios").default;
-(function () { return __awaiter(void 0, void 0, void 0, function () {
-    function findImports(importPath) {
-        try {
-            return {
-                contents: fs.readFileSync("smart_contracts/" + importPath, "utf8")
-            };
-        }
-        catch (e) {
-            return {
-                error: e.message
-            };
-        }
+var deploy_1 = require("./deploy");
+var listen_1 = require("./listen");
+var load_1 = require("./load");
+var send_1 = require("./send");
+var fs = require('fs');
+function initializeProvider() {
+    try {
+        var provider_data = fs.readFileSync('eth_providers/providers.json');
+        var provider_json = JSON.parse(provider_data);
+        var provider_link = provider_json["provider_link"];
+        return new web3_1.default.providers.WebsocketProvider(provider_link);
     }
-    function compileSols(solNames) {
-        ;
-        var sources = {};
-        solNames.forEach(function (value, index, array) {
-            var sol_file = fs.readFileSync("smart_contracts/" + value + ".sol", "utf8");
-            sources[value] = {
-                content: sol_file
-            };
-        });
-        var input = {
-            language: "Solidity",
-            sources: sources,
-            settings: {
-                outputSelection: {
-                    "*": {
-                        "*": ["*"]
+    catch (error) {
+        throw "Cannot read provider";
+    }
+}
+function getAccount(web3, name) {
+    try {
+        var account_data = fs.readFileSync('eth_accounts/accounts.json');
+        var account_json = JSON.parse(account_data);
+        var account_pri_key = account_json[name]["pri_key"];
+        return web3.eth.accounts.wallet.add('0x' + account_pri_key);
+    }
+    catch (error) {
+        throw "Cannot read account";
+    }
+}
+var shellArgs = process.argv.slice(2);
+if (shellArgs.length < 1) {
+    console.error("node programName cmd, e.g. node index.js deploy");
+    process.exit(1);
+}
+(function run() {
+    return __awaiter(this, void 0, void 0, function () {
+        var web3Provider, web3, cmd0, account, loaded, contract, err_1, account, loaded, contract, err_2, oracleAddr, babyFormulaAddresses, account, loaded, contract, i, err_3, account_1, contract_1, loaded, contractAddr;
+        var _this = this;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    try {
+                        web3Provider = initializeProvider();
+                        web3 = new web3_1.default(web3Provider);
                     }
-                }
-            }
-        };
-        var compiler_output = solc.compile(JSON.stringify(input), {
-            import: findImports
-        });
-        var output = JSON.parse(compiler_output);
-        return output;
-    }
-    var web3Provider, web3, account, compiled, contract_instance, gasPrice, contract, _a, _b, _c, _d, _e;
-    var _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
-            case 0:
-                web3Provider = new web3_1.default.providers.WebsocketProvider("ws://localhost:7545");
-                web3 = new web3_1.default(web3Provider);
-                account = web3.eth.accounts.wallet.add("0x" + "0a3f3963544a511c6736ad80864a486647bf86d18b31e1cf3fbdb4e6f26db6e3");
-                compiled = compileSols(["example"]);
-                contract = new web3.eth.Contract(compiled.contracts["example"]["CoatIndicator"].abi, undefined, {
-                    data: "0x" + compiled.contracts["example"]["CoatIndicator"].evm.bytecode.object
-                });
-                return [4 /*yield*/, web3.eth.getGasPrice().then(function (averageGasPrice) {
-                        gasPrice = averageGasPrice;
-                    }).catch(console.error)];
-            case 1:
-                _g.sent();
-                _b = (_a = contract.deploy({
-                    data: contract.options.data,
-                    arguments: [account.address]
-                })).send;
-                _f = {
-                    from: account.address,
-                    gasPrice: gasPrice
-                };
-                _d = (_c = Math).ceil;
-                _e = 1.2;
-                return [4 /*yield*/, contract.deploy({
-                        data: contract.options.data,
-                        arguments: [account.address]
-                    }).estimateGas({
-                        from: account.address
-                    })];
-            case 2: 
-            // assume account balance is sufficient
-            return [4 /*yield*/, _b.apply(_a, [(_f.gas = _d.apply(_c, [_e * (_g.sent())]),
-                        _f)]).then(function (instance) {
-                    contract_instance = instance;
-                }).catch(console.error)];
-            case 3:
-                // assume account balance is sufficient
-                _g.sent();
-                console.log(contract_instance.options.address);
-                // listen
-                contract_instance.events["temperatureRequest(string)"]()
-                    .on("connected", function (subscriptionId) {
-                    console.log("listening on event temperatureRequest");
-                })
-                    .on("data", function (event) {
-                    return __awaiter(this, void 0, void 0, function () {
-                        var city, temperature, _a, _b, _c, _d, _e, e_1;
-                        var _f;
-                        return __generator(this, function (_g) {
-                            switch (_g.label) {
-                                case 0:
-                                    city = event.returnValues.city;
-                                    console.log('here');
-                                    return [4 /*yield*/, axios.get("https://goweather.herokuapp.com/weather/" + city)
-                                            .then(function (response) {
-                                            var _a, _b;
-                                            return __awaiter(this, void 0, void 0, function () {
-                                                return __generator(this, function (_c) {
-                                                    return [2 /*return*/, (_b = (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.temperature) === null || _b === void 0 ? void 0 : _b.replace(/[^0-9-\.]/g, "")];
-                                                });
-                                            });
-                                        })
-                                            .catch(function (error) {
-                                            console.log(error);
-                                        })];
-                                case 1:
-                                    temperature = _g.sent();
-                                    if (!parseInt(temperature)) {
-                                        console.log("invalid temperature");
-                                        return [2 /*return*/];
-                                    }
-                                    _g.label = 2;
-                                case 2:
-                                    _g.trys.push([2, 4, , 5]);
-                                    _b = (_a = contract_instance.methods["responsePhase(int256)"](temperature)).send;
-                                    _f = {
-                                        from: account.address,
-                                        gasPrice: gasPrice
-                                    };
-                                    _d = (_c = Math).ceil;
-                                    _e = 1.2;
-                                    return [4 /*yield*/, contract_instance.methods["responsePhase(int256)"](temperature).estimateGas({ from: account.address })];
-                                case 3:
-                                    _b.apply(_a, [(_f.gas = _d.apply(_c, [_e * (_g.sent())]),
-                                            _f)]).then(function (receipt) {
-                                        5;
-                                        return receipt;
-                                    }).catch(function (err) {
-                                        console.error(err);
-                                    });
-                                    return [3 /*break*/, 5];
-                                case 4:
-                                    e_1 = _g.sent();
-                                    console.log(e_1);
-                                    return [3 /*break*/, 5];
-                                case 5: return [2 /*return*/];
+                    catch (e) {
+                        throw "web3 cannot be initialized";
+                    }
+                    cmd0 = shellArgs[0];
+                    if (!(cmd0 == "deploy")) return [3 /*break*/, 20];
+                    if (shellArgs.length < 2) {
+                        console.error("e.g. node index.js deploy oracle");
+                        process.exit(1);
+                    }
+                    if (!(shellArgs[1] == "babyFormula")) return [3 /*break*/, 5];
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    account = getAccount(web3, "user");
+                    loaded = load_1.loadCompiledSols(["BabyFormula"]);
+                    return [4 /*yield*/, deploy_1.deployContract(web3, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, [])];
+                case 2:
+                    contract = _a.sent();
+                    console.log("BabyFormula address: " + contract.options.address);
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_1 = _a.sent();
+                    console.error("error deploying contract");
+                    console.error(err_1);
+                    return [3 /*break*/, 4];
+                case 4: return [3 /*break*/, 19];
+                case 5:
+                    if (!(shellArgs[1] == "CargoShipTransitOracle")) return [3 /*break*/, 10];
+                    _a.label = 6;
+                case 6:
+                    _a.trys.push([6, 8, , 9]);
+                    account = getAccount(web3, "ship1");
+                    loaded = load_1.loadCompiledSols(["oracle", "CargoShipTransitOracle"]);
+                    return [4 /*yield*/, deploy_1.deployContract(web3, account, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].abi, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].evm.bytecode.object, [account.address])];
+                case 7:
+                    contract = _a.sent();
+                    console.log("oracle contract address: " + contract.options.address);
+                    return [3 /*break*/, 9];
+                case 8:
+                    err_2 = _a.sent();
+                    console.error("error deploying contract");
+                    console.error(err_2);
+                    return [3 /*break*/, 9];
+                case 9: return [3 /*break*/, 19];
+                case 10:
+                    if (!(shellArgs[1] == "babyFormulaTransit")) return [3 /*break*/, 19];
+                    if (!(shellArgs.length < 4)) return [3 /*break*/, 11];
+                    console.error("need to specify ship oracle address and at least one baby formula");
+                    return [3 /*break*/, 19];
+                case 11:
+                    oracleAddr = shellArgs[2];
+                    babyFormulaAddresses = shellArgs.slice(3);
+                    _a.label = 12;
+                case 12:
+                    _a.trys.push([12, 18, , 19]);
+                    account = getAccount(web3, "user");
+                    loaded = load_1.loadCompiledSols(["oracle", "BabyFormula", "BabyFormulaTransit"]);
+                    return [4 /*yield*/, deploy_1.deployContract(web3, account, loaded.contracts["BabyFormulaTransit"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormulaTransit"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr])];
+                case 13:
+                    contract = _a.sent();
+                    console.log("Baby Formula Transit contract address: " + contract.options.address);
+                    i = 0;
+                    _a.label = 14;
+                case 14:
+                    if (!(i < babyFormulaAddresses.length)) return [3 /*break*/, 17];
+                    return [4 /*yield*/, deploy_1.callDeployedContract(web3, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, babyFormulaAddresses[i], "setTransit(address)", [contract.options.address])];
+                case 15:
+                    _a.sent();
+                    _a.label = 16;
+                case 16:
+                    i++;
+                    return [3 /*break*/, 14];
+                case 17: return [3 /*break*/, 19];
+                case 18:
+                    err_3 = _a.sent();
+                    console.error("error deploying contract");
+                    console.error(err_3);
+                    return [3 /*break*/, 19];
+                case 19:
+                    web3Provider.disconnect(1000, 'Normal Closure');
+                    return [3 /*break*/, 21];
+                case 20:
+                    if (cmd0 == "listen") {
+                        if (shellArgs.length < 3) {
+                            console.error("e.g. node index.js listen oracle 0x23a01...");
+                            process.exit(1);
+                        }
+                        if (shellArgs[1] == "oracle") {
+                            try {
+                                account_1 = getAccount(web3, "ship1");
+                                loaded = load_1.loadCompiledSols(["oracle", "CargoShipTransitOracle"]);
+                                contractAddr = shellArgs[2];
+                                contract_1 = new web3.eth.Contract(loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].abi, contractAddr, {});
                             }
-                        });
-                    });
-                })
-                    .on("error", function (error, receipt) {
-                    console.log(error);
-                    console.log(receipt);
-                    console.log("error listening on event temperatureRequest");
-                });
-                return [2 /*return*/];
-        }
+                            catch (err) {
+                                console.error("error listening oracle contract");
+                                console.error(err);
+                            }
+                            listen_1.handleRequestEvent(contract_1, function (caller, requestId, data) { return __awaiter(_this, void 0, void 0, function () {
+                                var temperature1, temperatureHex1, receipt;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            temperature1 = 15;
+                                            try {
+                                                temperatureHex1 = web3.utils.toTwosComplement(temperature1);
+                                            }
+                                            catch (e) {
+                                                console.error("invalid temperature grabbed");
+                                                console.error(e);
+                                                return [2 /*return*/];
+                                            }
+                                            //let temperaturesHex = web3.eth.abi.encodeParameters(['uint256', 'uint256'], [temperatureHex1, temperatureHex2]);
+                                            console.log("the temperature is " + temperature1);
+                                            return [4 /*yield*/, send_1.methodSend(web3, account_1, contract_1.options.jsonInterface, "replyData(uint256,address,bytes)", contract_1.options.address, [requestId, caller, temperatureHex1])];
+                                        case 1:
+                                            receipt = _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); });
+                        }
+                    }
+                    _a.label = 21;
+                case 21: return [2 /*return*/];
+            }
+        });
     });
-}); })();
+})();
