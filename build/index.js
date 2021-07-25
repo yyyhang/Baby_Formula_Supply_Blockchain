@@ -43,6 +43,7 @@ var web3_1 = __importDefault(require("web3"));
 var fs = require("fs");
 var solc = require("solc");
 var axios = require("axios").default;
+var db = require("./db");
 (function () { return __awaiter(void 0, void 0, void 0, function () {
     function findImports(importPath) {
         try {
@@ -82,14 +83,20 @@ var axios = require("axios").default;
         var output = JSON.parse(compiler_output);
         return output;
     }
-    var web3Provider, web3, account, compiled, contract_instance, gasPrice, contract, _a, _b, _c, _d, _e;
+    var web3Provider, web3, sqlCommand, account, compiled, contract_instance, gasPrice, contract, _a, _b, _c, _d, _e;
     var _f;
     return __generator(this, function (_g) {
         switch (_g.label) {
             case 0:
                 web3Provider = new web3_1.default.providers.WebsocketProvider("ws://localhost:7545");
                 web3 = new web3_1.default(web3Provider);
-                account = web3.eth.accounts.wallet.add("0x" + "0a3f3963544a511c6736ad80864a486647bf86d18b31e1cf3fbdb4e6f26db6e3");
+                sqlCommand = "\n    CREATE TABLE IF NOT EXISTS key_envents (\n    id int(10) NOT NULL auto_increment,\n    location varchar(100) NOT NULL,\n    temperature float(30) NOT NULL,\n    device varchar(100) NOT NULL,\n    certificates varchar(10000) NOT NULL,\n    updated_time datetime DEFAULT CURRENT_TIMESTAMP,\n    PRIMARY KEY (id)\n    );\n    ";
+                db.query(sqlCommand, [], function (err, result) {
+                    if (err)
+                        throw err;
+                    console.log("Table created");
+                });
+                account = web3.eth.accounts.wallet.add("0x" + "9b35d32a3dcefaec076c6b7186a58e1fb34a3ae462a4227ba80d4dd87a8d3c65");
                 compiled = compileSols(["example"]);
                 contract = new web3.eth.Contract(compiled.contracts["example"]["CoatIndicator"].abi, undefined, {
                     data: "0x" + compiled.contracts["example"]["CoatIndicator"].evm.bytecode.object
@@ -138,7 +145,7 @@ var axios = require("axios").default;
                             switch (_g.label) {
                                 case 0:
                                     city = event.returnValues.city;
-                                    console.log('here');
+                                    console.log(city);
                                     return [4 /*yield*/, axios.get("https://goweather.herokuapp.com/weather/" + city)
                                             .then(function (response) {
                                             var _a, _b;

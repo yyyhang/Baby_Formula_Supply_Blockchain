@@ -3,12 +3,35 @@ const fs = require("fs");
 const solc = require("solc");
 import { Contract, DeployOptions } from "web3-eth-contract";
 const axios = require("axios").default;
+const db = require("./db");
+
+
 
 (async () => {
     const web3Provider = new Web3.providers.WebsocketProvider("ws://localhost:7545");
     const web3 = new Web3(web3Provider);
 
-    let account = web3.eth.accounts.wallet.add("0x" + "0a3f3963544a511c6736ad80864a486647bf86d18b31e1cf3fbdb4e6f26db6e3");
+    // Init database
+    var sqlCommand = `
+    CREATE TABLE IF NOT EXISTS key_envents (
+    id int(10) NOT NULL auto_increment,
+    location varchar(100) NOT NULL,
+    temperature float(30) NOT NULL,
+    device varchar(100) NOT NULL,
+    certificates varchar(10000) NOT NULL,
+    updated_time datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+    );
+    `
+
+    db.query(
+        sqlCommand, [], (err : never, result : any) => {
+            if (err) throw err;
+            console.log("Table created");
+        }
+    );
+
+    let account = web3.eth.accounts.wallet.add("0x" + "9b35d32a3dcefaec076c6b7186a58e1fb34a3ae462a4227ba80d4dd87a8d3c65");
 
     function findImports(importPath: string) {
         try {
@@ -85,7 +108,7 @@ const axios = require("axios").default;
         .on("data", async function (event: any) {
             let city = event.returnValues.city;
             
-            console.log('here');
+            console.log(city);
             let temperature = await axios.get(`https://goweather.herokuapp.com/weather/${city}`)
                 .then(async function (response: any) {
                     return response?.data?.temperature?.replace(/[^0-9-\.]/g, "");
