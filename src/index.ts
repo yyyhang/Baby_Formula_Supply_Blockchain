@@ -6,6 +6,7 @@ import { loadCompiledSols } from './load';
 import { methodSend } from './send';
 import { Contract } from 'web3-eth-contract';
 let fs = require('fs');
+const db = require("./db");
 
 function initializeProvider(): WebsocketProvider {
     try {
@@ -44,6 +45,26 @@ if (shellArgs.length < 1) {
     } catch (e) {
         throw "web3 cannot be initialized";
     }
+
+    // Init database
+    var sqlCommand = `
+    CREATE TABLE IF NOT EXISTS key_envents (
+    id int(10) NOT NULL auto_increment,
+    location varchar(100) NOT NULL,
+    temperature float(30) NOT NULL,
+    device varchar(100) NOT NULL,
+    certificates varchar(10000) NOT NULL,
+    updated_time datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+    );
+    `
+
+    db.query(
+        sqlCommand, [], (err : never, result : any) => {
+            if (err) throw err;
+            console.log("Table created");
+        }
+    );
 
     var cmd0 = shellArgs[0];
 

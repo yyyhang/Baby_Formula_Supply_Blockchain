@@ -14,7 +14,11 @@ contract CoatIndicator {
         requestTemperature("Melbourne");
     }
 
-    function responsePhase(int256 temperature) public {
-        needToWearCoat = temperature < 20;
+    function responsePhase(int256 temperature) public returns (int) {
+        emit tem(temperature);
+        needToWearCoat = temperature < 0;
+        return temperature;
     }
+    
+    event tem(int256 temperature);
 }
