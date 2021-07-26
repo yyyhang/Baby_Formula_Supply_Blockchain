@@ -22,4 +22,11 @@ contract BabyFormulaTransit is CargoShipTransitOracleClient {
         numTemperatures++;
         temperatures[numTemperatures] = _temperature1;
     }
+    uint public numFormula = 0;
+    mapping(uint => address) public formulaInformation;
+    function addBabyFormula(address babyFormula) public returns (uint) {
+        numFormula++;
+        formulaInformation[numFormula] = babyFormula;
+        return numFormula;
+    }
 }
