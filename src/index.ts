@@ -202,7 +202,7 @@ if (shellArgs.length < 1) {
                 let device = result[0]['device'];
                 let updated_time = result[0]['updated_time'];
 
-                console.log("the temperature is " + temperatureString);
+                console.log("the temperature is " + temperatureString + ', location is ' + location + ', device is ' + device + ', updated time is ' + updated_time);
 
                 try {
                         const temperature = parseInt(temperatureString)
@@ -219,6 +219,5 @@ if (shellArgs.length < 1) {
                 
             });
         }
-
     }
 })();
