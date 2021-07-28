@@ -138,9 +138,7 @@ if (shellArgs.length < 1) {
                         var randomEquipment = equipments[Math.floor(Math.random()*equipments.length)];
                         var randomnumber = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
                         db.query(
-                            sql, [contract.options.address, counter, randomLocation, randomnumber, randomEquipment], (err : never, result : any) => {
-                                if (err) throw err;
-                            }
+                            sql, [contract.options.address, counter, randomLocation, randomnumber, randomEquipment]
                         );
                     } while (counter < 5)
                     // Change the local path here:
@@ -192,7 +190,9 @@ if (shellArgs.length < 1) {
             handleRequestEvent(contract, async (caller: String, requestId: Number, data: any) => {
                 // call the database
                 counter = counter >= 5 ? 5 : counter + 1;
-                var sql = "SELECT * FROM baby_formula.key_envents WHERE address = ? And track_id = ?";
+                var sql = "SELECT * FROM key_events WHERE address = ? And track_id = ?";
+                console.log('contract:',contract);
+                console.log('counter:',counter);
                 let result = await db.query(
                     sql, [contract, counter]
                 );
