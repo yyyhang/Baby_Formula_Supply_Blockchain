@@ -16,13 +16,13 @@ exports.query = function (sql:string, arr:any) {
       if (err) {
         throw err;
       }
+      // console.log("connection query:", sql, "using" ,arr)
       connection.query(sql, arr, function (error: never, result: any) {
         if (error) {
           return reject(error);
         }
         resolve(result);
       });
-      console.log("released connection")
       pool.releaseConnection(connection);
     });
   })

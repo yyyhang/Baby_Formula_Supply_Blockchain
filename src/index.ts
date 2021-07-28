@@ -48,7 +48,7 @@ if (shellArgs.length < 1) {
 
     // Init database
     var sqlCommand = `
-    CREATE TABLE IF NOT EXISTS key_envents (
+    CREATE TABLE IF NOT EXISTS key_events (
     id int(10) NOT NULL auto_increment,
     track_id int(10) NOT NULL,
     address varchar(100) NOT NULL,
@@ -133,7 +133,7 @@ if (shellArgs.length < 1) {
                     let counter = 0;
                     do {
                         counter += 1;
-                        var sql: string = 'INSERT into key_envents(address, track_id, location, temperature, device) values (? , ? , ? , ?, ?)';
+                        var sql: string = 'INSERT into key_events(address, track_id, location, temperature, device) values (? , ? , ? , ?, ?)';
                         var randomLocation = locations[Math.floor(Math.random()*locations.length)];
                         var randomEquipment = equipments[Math.floor(Math.random()*equipments.length)];
                         var randomnumber = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
@@ -190,11 +190,10 @@ if (shellArgs.length < 1) {
             handleRequestEvent(contract, async (caller: String, requestId: Number, data: any) => {
                 // call the database
                 counter = counter >= 5 ? 5 : counter + 1;
-                var sql = "SELECT * FROM key_events WHERE address = ? And track_id = ?";
-                console.log('contract:',contract);
-                console.log('counter:',counter);
+                var sql = "SELECT * FROM key_events WHERE address = ? AND track_id = ?";
+                // console.log('counter:',counter);
                 let result = await db.query(
-                    sql, [contract, counter]
+                    sql, [caller, counter]
                 );
                 let temperatureString = result[0]['temperature'];
                 let temperatureHex1!: String;
