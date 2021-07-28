@@ -6,7 +6,7 @@ import { loadCompiledSols } from './load';
 import { methodSend } from './send';
 import { Contract } from 'web3-eth-contract';
 let fs = require('fs');
-//const db = require("./db");
+const db = require("./db");
 
 function initializeProvider(): WebsocketProvider {
     try {
@@ -47,24 +47,42 @@ if (shellArgs.length < 1) {
     }
 
     // Init database
-    /*var sqlCommand = `
+    var sqlCommand = `
     CREATE TABLE IF NOT EXISTS key_envents (
     id int(10) NOT NULL auto_increment,
+    track_id int(10) NOT NULL,
+    address varchar(100) NOT NULL,
     location varchar(100) NOT NULL,
     temperature float(30) NOT NULL,
     device varchar(100) NOT NULL,
-    certificates varchar(10000) NOT NULL,
     updated_time datetime DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
     );
     `
 
-    db.query(
+    await db.query(
         sqlCommand, [], (err : never, result : any) => {
             if (err) throw err;
             console.log("Table created");
         }
-    );*/
+    );
+
+    sqlCommand = `
+    CREATE TABLE IF NOT EXISTS hashed_certificates (
+    id int(10) NOT NULL auto_increment,
+    address varchar(100) NOT NULL,
+    certification MEDIUMTEXT NOT NULL,
+    updated_time datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+    );
+    `
+
+    await db.query(
+        sqlCommand, [], (err : never, result : any) => {
+            if (err) throw err;
+            console.log("Table created");
+        }
+    );
 
     var cmd0 = shellArgs[0];
 
@@ -105,12 +123,38 @@ if (shellArgs.length < 1) {
                     let loaded = loadCompiledSols(["oracle", "BabyFormula"]);
                     let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr]);
                     console.log("Baby Formula Transit contract address: " + contract.options.address);
-                    
-                    /*let counter = 0;
-                for (counter++) {
-                    insert row into table (oracle_address, counter, random.int(from), [melbourne, ])
-                }
-                // insert row into table (oracle address)*/
+                    // inserting random data to database
+                    var locations = ["Sydney","Melbourne","Brisbane","Melton","Busselton","Tamworth","Central Coast","Hobart","Launceston","Rockhampton","Devonport","Lismore","Armidale","Gympie","Griffith","Yeppoon","Wangaratta"];
+                    var equipments = ["Raw milk reception area","Pasteurizer and Homogeniser","Falling film Evaporator","Spray dryer","Cold storage tanks","Centrifugal separator","UHT sterilization system","Filling system"," Packing machine","CIP Cleaning System","Hygienic Pumps","Oil Blending"];
+                    let maximum = 25;
+                    let minimum = 0;
+                    let counter = 0;
+                    do {
+                        counter += 1;
+                        var sql: string = 'INSERT into key_envents(address, track_id, location, temperature, device) values (? , ? , ? , ?, ?)';
+                        var randomLocation = locations[Math.floor(Math.random()*locations.length)];
+                        var randomEquipment = equipments[Math.floor(Math.random()*equipments.length)];
+                        var randomnumber = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+                        db.query(
+                            sql, [contract.options.address, counter, randomLocation, randomnumber, randomEquipment], (err : never, result : any) => {
+                                if (err) throw err;
+                            }
+                        );
+                    } while (counter < 5)
+                    // Change the local path here:
+                    fs.readFile('./1.pdf','utf8', (err : never, data : any) => {
+                        if (err) {
+                            console.error(err)
+                            return
+                        }
+                        let content = new Buffer(data).toString('base64');
+                        var sql = 'INSERT into hashed_certificates (address, certification) values (?, ?)'
+                        db.query(
+                            sql, [contract, content], (err : never, result : any) => {
+                                if (err) throw err;
+                            }
+                        );
+                    })
 
                     for (var i = 0; i < babyFormulaAddresses.length; i++) {
                         await callDeployedContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, contract.options.address, "addBabyFormula(address)" , [babyFormulaAddresses[i]]);

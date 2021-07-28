@@ -1,3 +1,5 @@
+import { resolve } from "path/posix";
+
 const mysql = require("mysql");
 
 let pool = mysql.createPool({
@@ -8,16 +10,22 @@ let pool = mysql.createPool({
 	port: '3306'
 });
 
-exports.query = function (sql:string, arr:any, callback: any) {
-  pool.getConnection(function (err : never, connection: any) {
-    if (err) {
-      throw err;
-    }
-    connection.query(sql, arr, function (error: never, result: any) {
-      callback && callback(error, result);
+exports.query = function (sql:string, arr:any) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function (err : never, connection: any) {
+      if (err) {
+        throw err;
+      }
+      connection.query(sql, arr, function (error: never, result: any) {
+        if (error) {
+          return reject(error);
+        }
+        resolve(result);
+      });
+      console.log("released connection")
+      pool.releaseConnection(connection);
     });
-    pool.releaseConnection(connection);
-  });
+  })
 };
 
 exports.pool = pool;
