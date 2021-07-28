@@ -192,21 +192,33 @@ if (shellArgs.length < 1) {
                 
                 console.log('Caller: ' + caller);
                 // call the database
-                let temperature1 = 15;
-                let temperatureHex1!: String;
-                let location = "Sydney";
-                let device = "Centrifugal separator";
-                let certificate = "ASF";
-                try {
-                    temperatureHex1 = web3.utils.toTwosComplement(temperature1);
-                } catch (e) {
-                    console.error("invalid temperature grabbed");
-                    console.error(e);
-                    return;
-                }
-                let params = web3.eth.abi.encodeParameters(['uint256', 'string', 'string', 'string'], [temperatureHex1, location, device, certificate]);
-                console.log("the temperature is " + temperature1);
-                let receipt = await methodSend(web3, account, contract.options.jsonInterface, "replyData(uint256,address,bytes)", contract.options.address, [requestId, caller, params]);
+
+                do {
+                    counter += 1;
+                    var sql = "SELECT * FROM baby_formula.key_envents WHERE address = ? And track_id = ?";
+                    let result = await db.query(
+                        sql, [contract, counter]
+                    );
+                    let temperature1 = result[0]['temperature'];
+                    let temperatureHex1!: String;
+                    let location = result[0]['location'];
+                    let device = result[0]['device'];
+                    let updated_time = result[0]['updated_time'];
+
+                    // try {
+                    //     temperatureHex1 = web3.utils.toTwosComplement(temperature1);
+                    // } catch (e) {
+                    //     console.error("invalid temperature grabbed");
+                    //     console.error(e);
+                    //     return;
+                    // }
+
+                    let params = web3.eth.abi.encodeParameters(['uint256', 'string', 'string', 'string'], [temperatureHex1, location, device, updated_time]);
+                    console.log("the temperature is " + temperature1);
+                    let receipt = await methodSend(web3, account, contract.options.jsonInterface, "replyData(uint256,address,bytes)", contract.options.address, [requestId, caller, params]);
+                } while (counter < 5)
+                
+                
             });
         }
 
