@@ -113,12 +113,13 @@ if (shellArgs.length < 1) {
                 console.error(err);
             }
         } else if (shellArgs[1] == "babyFormulaTransit") {
-            if (shellArgs.length < 5) {
+            if (shellArgs.length < 6) {
                 console.error("need to specify Receiver Address, Baby Formula oracle address and at least one Baby Formula");
             } else {
                 let receiver = shellArgs[2];
-                let oracleAddr = shellArgs[3];
-                let babyFormulaAddresses = shellArgs.slice(4);
+                let receiptFileLocation = shellArgs[3];
+                let oracleAddr = shellArgs[4];
+                let babyFormulaAddresses = shellArgs.slice(5);
                 try {
                     let account = getAccount(web3, "sender");
                     let loaded = loadCompiledSols(["oracle", "BabyFormula"]);
@@ -142,7 +143,7 @@ if (shellArgs.length < 1) {
                         );
                     } while (counter < 5)
                     // Change the local path here:
-                    /*fs.readFile('./1.pdf','utf8', (err : never, data : any) => {
+                    fs.readFile(receiptFileLocation,'utf8', (err : never, data : any) => {
                         if (err) {
                             console.error(err)
                             return
@@ -154,7 +155,7 @@ if (shellArgs.length < 1) {
                                 if (err) throw err;
                             }
                         );
-                    })*/
+                    })
 
                     for (var i = 0; i < babyFormulaAddresses.length; i++) {
                         console.log("Adding Baby Formula to Transit");
