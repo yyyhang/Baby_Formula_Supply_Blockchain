@@ -6,7 +6,7 @@ import { loadCompiledSols } from './load';
 import { methodSend } from './send';
 import { Contract } from 'web3-eth-contract';
 let fs = require('fs');
-const db = require("./db");
+//const db = require("./db");
 
 function initializeProvider(): WebsocketProvider {
     try {
@@ -47,7 +47,7 @@ if (shellArgs.length < 1) {
     }
 
     // Init database
-    var sqlCommand = `
+    /*var sqlCommand = `
     CREATE TABLE IF NOT EXISTS key_envents (
     id int(10) NOT NULL auto_increment,
     location varchar(100) NOT NULL,
@@ -64,7 +64,7 @@ if (shellArgs.length < 1) {
             if (err) throw err;
             console.log("Table created");
         }
-    );
+    );*/
 
     var cmd0 = shellArgs[0];
 
@@ -89,6 +89,7 @@ if (shellArgs.length < 1) {
                 let loaded = loadCompiledSols(["oracle", "CargoShipTransitOracle"]);
                 let contract = await deployContract(web3!, account, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].abi, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].evm.bytecode.object, [account.address]);
                 console.log("oracle contract address: " + contract.options.address);
+
             } catch (err) {
                 console.error("error deploying contract");
                 console.error(err);
@@ -101,11 +102,18 @@ if (shellArgs.length < 1) {
                 let babyFormulaAddresses = shellArgs.slice(3);
                 try {
                     let account = getAccount(web3, "user");
-                    let loaded = loadCompiledSols(["oracle", "BabyFormula", "BabyFormulaTransit"]);
-                    let contract = await deployContract(web3!, account, loaded.contracts["BabyFormulaTransit"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormulaTransit"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr]);
+                    let loaded = loadCompiledSols(["oracle", "BabyFormula"]);
+                    let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr]);
                     console.log("Baby Formula Transit contract address: " + contract.options.address);
                     
+                    /*let counter = 0;
+                for (counter++) {
+                    insert row into table (oracle_address, counter, random.int(from), [melbourne, ])
+                }
+                // insert row into table (oracle address)*/
+
                     for (var i = 0; i < babyFormulaAddresses.length; i++) {
+                        await callDeployedContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, contract.options.address, "addBabyFormula(address)" , [babyFormulaAddresses[i]]);
                         await callDeployedContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, babyFormulaAddresses[i], "setTransit(address)" , [contract.options.address]);
                     }
                 
@@ -136,8 +144,15 @@ if (shellArgs.length < 1) {
             handleRequestEvent(contract, async (caller: String, requestId: Number, data: any) => {
                 //let cities = web3.eth.abi.decodeParameters(['string', 'string'], data);
                 //let city1 = cities[0];
+                let counter = 0;
+                
+                console.log('Caller: ' + caller);
+                // call the database
                 let temperature1 = 15;
                 let temperatureHex1!: String;
+                let location = "Sydney";
+                let device = "Centrifugal separator";
+                let certificate = "ASF";
                 try {
                     temperatureHex1 = web3.utils.toTwosComplement(temperature1);
                 } catch (e) {
@@ -145,9 +160,9 @@ if (shellArgs.length < 1) {
                     console.error(e);
                     return;
                 }
-                //let temperaturesHex = web3.eth.abi.encodeParameters(['uint256', 'uint256'], [temperatureHex1, temperatureHex2]);
+                let params = web3.eth.abi.encodeParameters(['uint256', 'string', 'string', 'string'], [temperatureHex1, location, device, certificate]);
                 console.log("the temperature is " + temperature1);
-                let receipt = await methodSend(web3, account, contract.options.jsonInterface, "replyData(uint256,address,bytes)", contract.options.address, [requestId, caller, temperatureHex1]);
+                let receipt = await methodSend(web3, account, contract.options.jsonInterface, "replyData(uint256,address,bytes)", contract.options.address, [requestId, caller, params]);
             });
         }
 

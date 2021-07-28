@@ -76,11 +76,11 @@ abstract contract CargoShipTransitOracleClient is OracleClient {
         override
         oracleOnly
     {
-        int256 temp = abi.decode(data, (int256));
-        receiveCargoStatusFromOracle(requestId, temp);
+        (int256 temp, string memory location, string memory device, string memory certificate) = abi.decode(data, (int256, string, string, string));
+        receiveCargoStatusFromOracle(requestId, temp, location, device, certificate);
     }
 
-    function receiveCargoStatusFromOracle(uint256 requestId, int256 temperature)
+    function receiveCargoStatusFromOracle(uint256 requestId, int256 temperature, string memory location, string memory device, string memory certificate)
         internal
         virtual;
 }
