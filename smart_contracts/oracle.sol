@@ -60,10 +60,10 @@ abstract contract Oracle is OracleInterface {
     }
 }
 
-abstract contract CargoShipTransitOracleClient is OracleClient {
+abstract contract BabyFormulaStatusOracleClient is OracleClient {
     constructor(address oracleAd) OracleClient(oracleAd) {}
 
-    function requestCargoStatusFromOracle()
+    function requestBabyFormulaStatusFromOracle()
         internal
         returns (uint256)
     {
@@ -77,10 +77,10 @@ abstract contract CargoShipTransitOracleClient is OracleClient {
         oracleOnly
     {
         (int256 temp, string memory location, string memory device, string memory certificate) = abi.decode(data, (int256, string, string, string));
-        receiveCargoStatusFromOracle(requestId, temp, location, device, certificate);
+        receiveBabyFormulaStatusFromOracle(requestId, temp, location, device, certificate);
     }
 
-    function receiveCargoStatusFromOracle(uint256 requestId, int256 temperature, string memory location, string memory device, string memory certificate)
+    function receiveBabyFormulaStatusFromOracle(uint256 requestId, int256 temperature, string memory location, string memory device, string memory certificate)
         internal
         virtual;
 }

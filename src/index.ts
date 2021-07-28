@@ -75,44 +75,41 @@ if (shellArgs.length < 1) {
         }
         if (shellArgs[1] == "babyFormula") {
             try {
-                let account = getAccount(web3, "user");
-                let loaded = loadCompiledSols(["BabyFormula"]);
+                let account = getAccount(web3, "sender");
+                let loaded = loadCompiledSols(["oracle", "BabyFormula"]);
                 let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, []);
-                console.log("BabyFormula address: " + contract.options.address);
+                console.log("Baby Formula address: " + contract.options.address);
             } catch (err) {
                 console.error("error deploying contract");
                 console.error(err);
             }
-        } else if (shellArgs[1] == "CargoShipTransitOracle") {
+        } else if (shellArgs[1] == "babyFormulaStatusOracle") {
             try {
-                let account = getAccount(web3, "ship1");
-                let loaded = loadCompiledSols(["oracle", "CargoShipTransitOracle"]);
-                let contract = await deployContract(web3!, account, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].abi, loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].evm.bytecode.object, [account.address]);
-                console.log("oracle contract address: " + contract.options.address);
+                let account = getAccount(web3, "iot_device_1");
+                let loaded = loadCompiledSols(["oracle", "BabyFormulaStatusOracle"]);
+                let contract = await deployContract(web3!, account, loaded.contracts["BabyFormulaStatusOracle"]["BabyFormulaStatusOracle"].abi, loaded.contracts["BabyFormulaStatusOracle"]["BabyFormulaStatusOracle"].evm.bytecode.object, [account.address]);
+                console.log("Baby Formula Oracle contract address: " + contract.options.address);
 
             } catch (err) {
                 console.error("error deploying contract");
                 console.error(err);
             }
         } else if (shellArgs[1] == "babyFormulaTransit") {
-            if (shellArgs.length < 4) {
-                console.error("need to specify ship oracle address and at least one baby formula");
+            if (shellArgs.length < 5) {
+                console.error("need to specify Receiver Address, Baby Formula oracle address and at least one Baby Formula");
             } else {
-                let oracleAddr = shellArgs[2];
-                let babyFormulaAddresses = shellArgs.slice(3);
+                let receiver = shellArgs[2];
+                let oracleAddr = shellArgs[3];
+                let babyFormulaAddresses = shellArgs.slice(4);
                 try {
-                    let account = getAccount(web3, "user");
+                    let account = getAccount(web3, "sender");
                     let loaded = loadCompiledSols(["oracle", "BabyFormula"]);
-                    let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr]);
+                    let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, [oracleAddr, receiver]);
                     console.log("Baby Formula Transit contract address: " + contract.options.address);
                     
-                    /*let counter = 0;
-                for (counter++) {
-                    insert row into table (oracle_address, counter, random.int(from), [melbourne, ])
-                }
-                // insert row into table (oracle address)*/
 
                     for (var i = 0; i < babyFormulaAddresses.length; i++) {
+                        console.log("Adding Baby Formula to Transit");
                         await callDeployedContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].abi, loaded.contracts["BabyFormula"]["BabyFormulaTransit"].evm.bytecode.object, contract.options.address, "addBabyFormula(address)" , [babyFormulaAddresses[i]]);
                         await callDeployedContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, babyFormulaAddresses[i], "setTransit(address)" , [contract.options.address]);
                     }
@@ -129,14 +126,14 @@ if (shellArgs.length < 1) {
             console.error("e.g. node index.js listen oracle 0x23a01...");
             process.exit(1);
         }
-        if (shellArgs[1] == "oracle") {
+        if (shellArgs[1] == "babyFormulaStatusOracle") {
             let account!: Account;
             let contract!: Contract;
             try {
-                account = getAccount(web3, "ship1");
-                let loaded = loadCompiledSols(["oracle", "CargoShipTransitOracle"]);
+                account = getAccount(web3, "iot_device_1");
+                let loaded = loadCompiledSols(["oracle", "BabyFormulaStatusOracle"]);
                 let contractAddr = shellArgs[2];
-                contract = new web3.eth.Contract(loaded.contracts["CargoShipTransitOracle"]["CargoShipTransitOracle"].abi, contractAddr, {});
+                contract = new web3.eth.Contract(loaded.contracts["BabyFormulaStatusOracle"]["BabyFormulaStatusOracle"].abi, contractAddr, {});
             } catch (err) {
                 console.error("error listening oracle contract");
                 console.error(err);
@@ -146,7 +143,6 @@ if (shellArgs.length < 1) {
                 //let city1 = cities[0];
                 let counter = 0;
                 
-                console.log('Caller: ' + caller);
                 // call the database
                 let temperature1 = 15;
                 let temperatureHex1!: String;

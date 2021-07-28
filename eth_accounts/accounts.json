@@ -1,8 +1,11 @@
 {
-    "ship1": {
+    "iot_device_1": {
         "pri_key": "3e67877babfe9bd54e250312177f74d7f74aa5e7a7307e1349aac2b21e33dd5e"
     },
-    "user": {
+    "sender": {
         "pri_key": "56a5ec05c25713ed0a2fb0d899629e621dcc52ff390c41554d4933a427e65686"
+    },
+    "receiver": {
+        "pri_key": "4e4aede974f9f79a20bc2c620271ea9474f99a4d143be4d610f5188348396124"
     }
 }
