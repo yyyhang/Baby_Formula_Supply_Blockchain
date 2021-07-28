@@ -46,47 +46,48 @@ if (shellArgs.length < 1) {
         throw "web3 cannot be initialized";
     }
 
-    // Init database
-    var sqlCommand = `
-    CREATE TABLE IF NOT EXISTS key_events (
-    id int(10) NOT NULL auto_increment,
-    track_id int(10) NOT NULL,
-    address varchar(100) NOT NULL,
-    location varchar(100) NOT NULL,
-    temperature float(30) NOT NULL,
-    device varchar(100) NOT NULL,
-    updated_time datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-    );
-    `
-
-    await db.query(
-        sqlCommand, [], (err : never, result : any) => {
-            if (err) throw err;
-            console.log("Table created");
-        }
-    );
-
-    sqlCommand = `
-    CREATE TABLE IF NOT EXISTS hashed_certificates (
-    id int(10) NOT NULL auto_increment,
-    address varchar(100) NOT NULL,
-    certification MEDIUMTEXT NOT NULL,
-    updated_time datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-    );
-    `
-
-    await db.query(
-        sqlCommand, [], (err : never, result : any) => {
-            if (err) throw err;
-            console.log("Table created");
-        }
-    );
-
     var cmd0 = shellArgs[0];
+    // To Init database
+    if (cmd0 == "init"){
+        console.log("Database Table Creating ... ");
 
-    if (cmd0 == "deploy") {
+        var sqlCommand = `
+        CREATE TABLE IF NOT EXISTS key_events (
+        id int(10) NOT NULL auto_increment,
+        track_id int(10) NOT NULL,
+        address varchar(100) NOT NULL,
+        location varchar(100) NOT NULL,
+        temperature float(30) NOT NULL,
+        device varchar(100) NOT NULL,
+        updated_time datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+        );
+        `
+
+        await db.query(
+            sqlCommand, []
+        );
+
+        sqlCommand = `
+        CREATE TABLE IF NOT EXISTS hashed_certificates (
+        id int(10) NOT NULL auto_increment,
+        address varchar(100) NOT NULL,
+        certification MEDIUMTEXT NOT NULL,
+        updated_time datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+        );
+        `
+
+        await db.query(
+            sqlCommand, []
+        );
+
+        console.log("Database Tables Created ");
+
+        process.exit();
+    }
+
+    else if (cmd0 == "deploy") {
         if (shellArgs.length < 2) {
             console.error("e.g. node index.js deploy oracle");
             process.exit(1);
@@ -98,7 +99,7 @@ if (shellArgs.length < 1) {
                 let contract = await deployContract(web3!, account, loaded.contracts["BabyFormula"]["BabyFormula"].abi, loaded.contracts["BabyFormula"]["BabyFormula"].evm.bytecode.object, []);
                 console.log("Baby Formula address: " + contract.options.address);
             } catch (err) {
-                console.error("error deploying contract");
+                console.error("error deploying babyFormula contract");
                 console.error(err);
             }
         } else if (shellArgs[1] == "babyFormulaStatusOracle") {
@@ -109,7 +110,7 @@ if (shellArgs.length < 1) {
                 console.log("Baby Formula Oracle contract address: " + contract.options.address);
 
             } catch (err) {
-                console.error("error deploying contract");
+                console.error("error deploying babyFormulaStatusOracle contract");
                 console.error(err);
             }
         } else if (shellArgs[1] == "babyFormulaTransit") {
@@ -151,7 +152,7 @@ if (shellArgs.length < 1) {
                         let content = new Buffer(data).toString('base64');
                         var sql = 'INSERT into hashed_certificates (address, certification) values (?, ?)'
                         db.query(
-                            sql, [contract, content], (err : never, result : any) => {
+                            sql, [contract.options.address, content], (err : never, result : any) => {
                                 if (err) throw err;
                             }
                         );
@@ -164,12 +165,13 @@ if (shellArgs.length < 1) {
                     }
                 
                 } catch (err) {
-                    console.error("error deploying contract");
+                    console.error("error deploying babyFormulaTransit contract");
                     console.error(err);
                 }
             }
         }
         web3Provider.disconnect(1000, 'Normal Closure');
+        process.exit();
     } else if (cmd0 == "listen") {
         if (shellArgs.length < 3) {
             console.error("e.g. node index.js listen oracle 0x23a01...");
