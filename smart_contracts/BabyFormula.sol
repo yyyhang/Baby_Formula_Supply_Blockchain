@@ -61,8 +61,11 @@ contract BabyFormula is BabyFormulaInterface {
 }
 
 contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
-    address creator;
-    address receiver;
+    address public creator;
+    address public receiver;
+    mapping(uint256 => bytes32) public receiptHash;
+    uint256 numReceiptParts;
+
     bool transitInitiated = false;
     bool transitFinished = false;
 
@@ -127,6 +130,15 @@ contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
         numFormula++;
         formulaInformation[numFormula] = babyFormula;
         return numFormula;
+    }
+
+    function addReceipt(string memory encodedReceipt)
+        public
+        beforeTransit
+        creatorOnly
+    {   
+        numReceiptParts++;
+        receiptHash[numReceiptParts]= sha256(abi.encodePacked(encodedReceipt));
     }
 
     function startTransit() public creatorOnly beforeTransit {
