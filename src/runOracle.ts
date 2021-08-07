@@ -1,12 +1,13 @@
 import Web3 from 'web3';
 import { WebsocketProvider, Account } from 'web3-core';
-import { callDeployedContract, deployContract } from './deploy';
+import { deployContract } from './deploy';
 import { handleRequestEvent } from './listen';
 import { loadCompiledSols } from './load';
 import { methodSend } from './send';
 import { Contract } from 'web3-eth-contract';
 let fs = require('fs');
 const db = require("./db");
+const readlineModule = require('readline');
 
 function initializeProvider(): WebsocketProvider {
     try {
@@ -21,16 +22,19 @@ function initializeProvider(): WebsocketProvider {
 
 function getAccount(web3: Web3, name: string): Account {
     try {
-        let account_data = fs.readFileSync('eth_accounts/accounts.json');
-        let account_json = JSON.parse(account_data);
-        let account_pri_key = account_json[name]["pri_key"];
-        return web3.eth.accounts.wallet.add('0x' + account_pri_key);
+        return web3.eth.accounts.wallet.add('0x' + name);
     } catch (error) {
         throw "Cannot read account";
     }
 }
 
-(async function run() {
+
+const login = readlineModule.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+login.question('Enter private key of ship\n', async (answer: string) => {
     let web3Provider!: WebsocketProvider;
     let web3!: Web3;
     try {
@@ -41,15 +45,16 @@ function getAccount(web3: Web3, name: string): Account {
     }
 
     try {
-        let account = getAccount(web3, "iot_device_1");
+        let account = getAccount(web3, answer);
         let loaded = loadCompiledSols(["oracle", "BabyFormulaStatusOracle"]);
+
+        login.close();
         let contract = await deployContract(web3!, account, loaded.contracts["BabyFormulaStatusOracle"]["BabyFormulaStatusOracle"].abi, loaded.contracts["BabyFormulaStatusOracle"]["BabyFormulaStatusOracle"].evm.bytecode.object, [account.address]);
-        console.log("Baby Formula Oracle contract address: " + contract.options.address);
-        
+        console.log("\nBaby Formula Oracle contract address: " + contract.options.address);
         let counter = 0;
         handleRequestEvent(contract, async (caller: String, requestId: Number, data: any) => {
-            // call the database
-            counter = counter >= 5 ? 5 : counter + 1;
+            // query the database for mock data
+            counter = counter >= 5 ? 1 : counter + 1;
             var sql = "SELECT * FROM key_events WHERE address = ? AND track_id = ?";
             // console.log('counter:',counter);
             let result = await db.query(
@@ -60,9 +65,9 @@ function getAccount(web3: Web3, name: string): Account {
             let location = result[0]['location'];
             let device = result[0]['device'];
             let updated_time = result[0]['updated_time'];
-    
+
             console.log("the temperature is " + temperatureString + ', location is ' + location + ', device is ' + device + ', updated time is ' + updated_time);
-    
+
             try {
                 const temperature = parseInt(temperatureString)
                 temperatureHex1 = web3.utils.toTwosComplement(temperature);
@@ -71,15 +76,12 @@ function getAccount(web3: Web3, name: string): Account {
                 console.error(e);
                 return;
             }
-    
+
             let params = web3.eth.abi.encodeParameters(['uint256', 'string', 'string', 'string'], [temperatureHex1, location, device, updated_time]);
             let receipt = await methodSend(web3, account, contract.options.jsonInterface, "replyData(uint256,address,bytes)", contract.options.address, [requestId, caller, params]);
-    
-    
         });
     } catch (err) {
         console.error("error deploying babyFormulaStatusOracle contract");
         console.error(err);
     }
-    
-})();
+});

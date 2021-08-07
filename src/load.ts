@@ -4,7 +4,7 @@ let solc = require('solc');
 function findImports(importPath: string) {
     try {
         return {
-            contents: fs.readFileSync(`smart_contracts/${importPath}`, 'utf8')
+            contents: fs.readFileSync(`contracts/${importPath}`, 'utf8')
         };
     } catch (e) {
         return {
@@ -18,7 +18,7 @@ export function loadCompiledSols(solNames: string[]): any {
 
     let sources: SolCollection = {};
     solNames.forEach((value: string, index: number, array: string[]) => {
-        let a_file = fs.readFileSync(`smart_contracts/${value}.sol`, 'utf8');
+        let a_file = fs.readFileSync(`contracts/${value}.sol`, 'utf8');
         sources[value] = {
             content: a_file
         };
