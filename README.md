@@ -3,44 +3,55 @@
 ## getting dtsrted
 
 ```sh
-mkdir eth_providers && touch eth_providers/providers.json
+Launch Ganache with quick start
 
-mkdir eth_accounts && touch eth_accounts/accounts.json
+Ensure eth_providers/providers,json is configured with the same RPC server as Ganache
+
 ```
-Then launch Ganache with quick start
-
-Fill in providers and accounts to eth_accounts/accounts.json with pri_key using 3 different account private keys
-
-Then run: 
+Then run:
 
 ```sh
 npm install
 
 npx tsc
 
-node build/index.js initdb
+node build/setupDb.js
 
-node build/index.js deploy babyFormula
+node build/runOracle.js
 
-node build/index.js deploy babyFormulaStatusOracle
+When prompted enter the private key of an account (supposed to be the ship server account)
+
+The oracle address should be printed and can be used in the createTransit command stated in the below steps
+
 ```
 
 Then:
 
 ```sh
-node build/index.js deploy babyFormulaTransit <receiver_public_address> path_of_pdf <babyFormulaStatusOracle_address> <babyFormula_address>
+node build/index.js
+
+When prompted enter the private key of an different account (supposed to be the formula producer account)
+
+The following commands can then be entered
+
+    createFormula -batchSize=<number>
+
+    listFormula
+    
+    createTransit -receiver=<receiver_pub_key> -shipOracle=<oracle_address> -receiptLocation=<pdf_file_location> -formula=<formula_address,formula_address,formula_address....>
+    
+    startTransit -transit=<transitAddress>
+    
+    runTransit -transit=<transitAddress>
+
 ```
 
-Then open remix, change the enviornment to web3 with correct port number
+To view state changes open remix and compile all the contracts in the contracts folder
 
-Copy the transit address to 'At Address' and click it with smart contract is babyFomularTransit and the account is sender
+Change the enviornment to web3 with correct port number
 
-Now you can click 'startTransit'
+Copy the address of the contract to 'At Address' and click it with the smart contract you want to view
 
-Then go back to local terminal, run:
-
-node build/index.js listen babyFormulaStatusOracle <babyFormulaStatusOracle_address>
-
-Back to Remix, you can change the account to receiver acount and click getBabyFormulaStatus.
+Some interesting fields to look at are qualityStatus, location, owner in BabyFormula and temperatures, receiptHash and locations in BabyFormulaTransit
 
 
