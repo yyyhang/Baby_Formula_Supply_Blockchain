@@ -4,15 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./oracle.sol";
 
-interface BabyFormulaInterface {
-    function updateQualityStatus(string memory updatedQualityStatus) external;
-
-    function updateLocation(string memory updatedLocation) external;
-
-    function updateOwner(address updatedOwner) external;
-}
-
-contract BabyFormula is BabyFormulaInterface {
+contract BabyFormula {
     address public owner;
     string public location = "";
     string public qualityStatus = "";
@@ -28,7 +20,6 @@ contract BabyFormula is BabyFormulaInterface {
 
     function updateLocation(string memory updatedLocation)
         public
-        override
         transitOnly
     {
         location = updatedLocation;
@@ -36,13 +27,12 @@ contract BabyFormula is BabyFormulaInterface {
 
     function updateQualityStatus(string memory updatedQualityStatus)
         public
-        override
         transitOnly
     {
         qualityStatus = updatedQualityStatus;
     }
 
-    function updateOwner(address updatedOwner) public override transitOnly {
+    function updateOwner(address updatedOwner) public transitOnly {
         owner = updatedOwner;
     }
 
@@ -63,8 +53,7 @@ contract BabyFormula is BabyFormulaInterface {
 contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
     address public creator;
     address public receiver;
-    mapping(uint256 => bytes32) public receiptHash;
-    uint256 numReceiptParts;
+    string public receiptHash;
 
     bool transitInitiated = false;
     bool transitFinished = false;
@@ -106,7 +95,7 @@ contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
         locations[numLocations] = location;
 
         for (uint256 j = 1; j <= numFormula; j++) {
-            BabyFormulaInterface(formulaInformation[j]).updateLocation(
+            BabyFormula(formulaInformation[j]).updateLocation(
                 location
             );
         }
@@ -132,13 +121,12 @@ contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
         return numFormula;
     }
 
-    function addReceipt(string memory encodedReceipt)
+    function addReceipt(string memory receiptHash)
         public
         beforeTransit
         creatorOnly
     {   
-        numReceiptParts++;
-        receiptHash[numReceiptParts]= sha256(abi.encodePacked(encodedReceipt));
+        receiptHash = receiptHash;
     }
 
     function startTransit() public creatorOnly beforeTransit {
@@ -162,11 +150,11 @@ contract BabyFormulaTransit is BabyFormulaStatusOracleClient {
 
         for (uint256 j = 1; j <= numFormula; j++) {
             string memory updatedQuality = safe ? "SAFE" : "UNSAFE";
-            BabyFormulaInterface(formulaInformation[j]).updateQualityStatus(
+            BabyFormula(formulaInformation[j]).updateQualityStatus(
                 updatedQuality
             );
             if (safe) {
-                BabyFormulaInterface(formulaInformation[j]).updateOwner(
+                BabyFormula(formulaInformation[j]).updateOwner(
                     receiver
                 );
             }

@@ -72,5 +72,9 @@ export async function callDeployedContract(web3: Web3, account: Account, abi: an
         from: account.address,
         gasPrice: gasPrice,
         gas: Helper.gasPay(await a_contract.methods[methodSignature](...(args ?? [])).estimateGas({ from: account.address })),
-    }).catch(console.error);
+    }).then(function (receipt: any) {
+        return receipt;
+    }).catch((ee: any) => {
+        console.error("ee");
+    });
 }
