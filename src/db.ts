@@ -3,9 +3,9 @@ import { resolve } from "path/posix";
 const mysql = require("mysql");
 
 let pool = mysql.createPool({
-  host: '35.244.114.32',
+  host: '35.244.***.32',
 	user: 'root',
-	password: 'nullorcmd',
+	password: '******',
 	database: 'baby_formula',
 	port: '3306'
 });
